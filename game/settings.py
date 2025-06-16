@@ -30,5 +30,5 @@ WIDTH = 400
 HEIGHT = 300
 
 # Inne
-FPS = 60
+FPS = 90
 SCALE_FACTOR = 5

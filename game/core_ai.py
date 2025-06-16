@@ -22,13 +22,15 @@ class ShootingGameEnv:
             Action.SHOOT.value,
             Action.NONE.value,
         ]
-        self.seed(seed)
+        # self.seed(seed)
+        self._random = random.Random(seed) if seed is not None else random.Random()
+        self._seed = seed
         self.reset()
 
-    def seed(self, seed=None):
-        self._random = random.Random(seed)
-        np.random.seed(seed)
-        self._seed = seed
+    # def seed(self, seed=None):
+    #     self._random = random.Random(seed)
+    #     np.random.seed(seed)
+    #     self._seed = seed
 
     def reset(self):
         self.player = Player(WIDTH // 2 - 25, HEIGHT - 50)

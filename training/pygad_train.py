@@ -75,13 +75,13 @@ def on_generation(ga):
 action_space_size = 4
 sequence_length = 1000
 generations = 150
-success = 100_000
+success = 110_000
 num_trials = 5
 generations_needed = []
 
 
 for trial in range(num_trials):
-    env = ShootingGameEnv()
+    env = ShootingGameEnv(seed=13)
 
     ga_instance = pygad.GA(
         num_generations=generations,
@@ -94,7 +94,7 @@ for trial in range(num_trials):
         parent_selection_type="tournament",
         crossover_type="single_point",
         mutation_type="random",
-        stop_criteria=[f"reach_{success}", "saturate_60"],
+        stop_criteria=[f"reach_{success}", "saturate_100"],
         on_generation=on_generation,
     )
 

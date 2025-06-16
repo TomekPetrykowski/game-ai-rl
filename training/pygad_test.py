@@ -5,7 +5,7 @@ import os
 
 def evaluate_solution(solution):
     total_reward = 0
-    env = ShootingGameEnv(render_mode=True)
+    env = ShootingGameEnv(seed=13, render_mode=True)
     for action in solution:
         _, reward, done = env.step(action)
         total_reward += reward

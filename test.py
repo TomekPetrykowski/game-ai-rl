@@ -2,7 +2,7 @@ from game.core_ai import ShootingGameEnv
 import random
 
 if __name__ == "__main__":
-    env = ShootingGameEnv(render_mode=False, max_steps=1000)
+    env = ShootingGameEnv(seed=42, render_mode=True, max_steps=1000)
     rewards = []
 
     for _ in range(1000):

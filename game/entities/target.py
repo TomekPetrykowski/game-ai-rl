@@ -11,7 +11,7 @@ class Target:
         self.rect = pg.Rect(x, y, 30, 30)
         self.target_type = target_type
 
-        self.rng = rng if rng is not None else random
+        self.rng = rng if rng is not None else random.Random()
 
         self.speed = self.rng.uniform(TARGET_SPEED_MIN, TARGET_SPEED_MAX)
         self.color = (255, 0, 0) if target_type == TargetType.OPPONENT else (0, 0, 255)
