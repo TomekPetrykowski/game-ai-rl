@@ -8,38 +8,57 @@ import numpy as np
 
 class ShootingGameEnv:
 
-    def __init__(self, max_steps=-1, render_mode=False):
+    def __init__(self, seed=None, max_steps=-1, render_mode=False):
         pg.init()
         self.screen = pg.display.set_mode((WIDTH, HEIGHT)) if render_mode else None
         self.clock = pg.time.Clock()
         self.font = pg.font.SysFont("Comic Sans", 30) if render_mode else None
         self.render_mode = render_mode
         self.max_steps = max_steps
+        self.speed = 1
+        self.actions = [
+            Action.LEFT.value,
+            Action.RIGHT.value,
+            Action.SHOOT.value,
+            Action.NONE.value,
+        ]
+        self.seed(seed)
         self.reset()
+
+    def seed(self, seed=None):
+        self._random = random.Random(seed)
+        np.random.seed(seed)
+        self._seed = seed
 
     def reset(self):
         self.player = Player(WIDTH // 2 - 25, HEIGHT - 50)
         self.bullets = []
         self.targets = []
         self.score = 0
-        self.target_spawn_timer = 0.0
-        self.target_spawn_delay = SPAWN_RATE_SECONDS
+        self.target_spawn_timer = 0
+        self.target_spawn_delay = SPAWN_RATE
         self.done = False
         self.ticks = 0
-        return self.get_state()
+        # return self.get_state()
 
     def step(self, action):
-        dt = 1.0 / FPS * GAME_SPEED_MULTIPLIER
-
-        self._handle_action(action, dt)
-        self._spawn_targets(dt)
-        self._update_entities(dt)
+        self._handle_action(action)
+        self._spawn_targets()
+        self._update_entities()
         self._check_collisions()
 
         self.ticks += 1
 
-        if self.max_steps < 0 and self.ticks > self.max_steps:
+        if self.max_steps > 0 and self.ticks > self.max_steps:
             self.done = True
+
+        if self.score < -500:
+            self.done = True
+            self.score = -500
+
+        if self.score >= 200:
+            self.done = True
+            self.score = 200
 
         if self.render_mode:
             self.render()
@@ -78,7 +97,7 @@ class ShootingGameEnv:
                 else:
                     grid[gy, gx, 2] -= 1.0
 
-        return grid.flatten()
+        return grid
 
     def _get_covered_cells(self, rect, cell_w, cell_h, grid_size):
         left = int(rect.left // cell_w)
@@ -95,6 +114,11 @@ class ShootingGameEnv:
         if not self.screen:
             return
 
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                self.close()
+                exit()
+
         self.screen.fill(BLACK)
         self.player.draw(self.screen)
 
@@ -109,44 +133,44 @@ class ShootingGameEnv:
             self.screen.blit(score_text, (10, 10))
 
         pg.display.flip()
+        self.clock.tick(int(FPS * self.speed))
 
     def close(self):
-        if self.screen:
-            pg.quit()
+        pg.quit()
 
-    def _handle_action(self, action, dt):
+    def _handle_action(self, action):
         if action == Action.LEFT.value:
-            self.player.move_left(dt)
+            self.player.move_left()
         elif action == Action.RIGHT.value:
-            self.player.move_right(dt)
+            self.player.move_right()
         elif action == Action.SHOOT.value:
-            if self.player.shoot(dt):
+            if self.player.shoot():
                 bullet = Bullet(self.player.rect.centerx - 2, self.player.rect.top)
                 self.bullets.append(bullet)
         else:
-            self.player.update(dt)
+            self.player.update()
 
-    def _spawn_targets(self, dt):
-        self.target_spawn_timer += dt
+    def _spawn_targets(self):
+        self.target_spawn_timer += 1
         if self.target_spawn_timer >= self.target_spawn_delay:
-            self.target_spawn_timer = 0.0
-            x = random.randint(0, WIDTH - 30)
+            self.target_spawn_timer = 0
+            x = self._random.randint(0, WIDTH - 30)
             target_type = (
                 TargetType.OPPONENT
-                if random.random() > SPAWN_CHANCE_ALLY
+                if self._random.random() > SPAWN_CHANCE_ALLY
                 else TargetType.ALLY
             )
-            target = Target(x, -30, target_type)
+            target = Target(x, -30, target_type, rng=self._random)
             self.targets.append(target)
 
-    def _update_entities(self, dt):
+    def _update_entities(self):
         for bullet in self.bullets[:]:
-            bullet.update(dt)
+            bullet.update()
             if bullet.is_off_screen():
                 self.bullets.remove(bullet)
 
         for target in self.targets[:]:
-            target.update(dt)
+            target.update()
             if target.is_off_screen():
                 self.score += target.no_collision_reward
                 self.targets.remove(target)

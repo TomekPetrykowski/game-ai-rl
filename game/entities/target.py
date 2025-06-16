@@ -5,12 +5,15 @@ from game import *
 
 
 class Target:
-    def __init__(self, x: int, y: int, target_type: TargetType = TargetType.OPPONENT):
-        self.x = float(x)
-        self.y = float(y)
+    def __init__(
+        self, x: int, y: int, target_type: TargetType = TargetType.OPPONENT, rng=None
+    ):
         self.rect = pg.Rect(x, y, 30, 30)
         self.target_type = target_type
-        self.speed = random.uniform(TARGET_SPEED_MIN, TARGET_SPEED_MAX)
+
+        self.rng = rng if rng is not None else random
+
+        self.speed = self.rng.uniform(TARGET_SPEED_MIN, TARGET_SPEED_MAX)
         self.color = (255, 0, 0) if target_type == TargetType.OPPONENT else (0, 0, 255)
         self.reward_value = (
             SHOOT_REWARD_OPPONENT
@@ -28,10 +31,9 @@ class Target:
             else NO_COLLISION_REWARD_OPPONENT
         )
 
-    def update(self, dt):
-        movement = self.speed * dt
-        self.y = self.y + movement
-        self.rect.y = int(self.y)
+    def update(self):
+        movement = self.speed
+        self.rect.y += movement
 
     def is_off_screen(self):
         return self.rect.top > HEIGHT

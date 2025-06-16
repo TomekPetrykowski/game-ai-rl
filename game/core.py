@@ -22,26 +22,26 @@ class Game:
 
         # Game state
         self.score = 0
-        self.target_spawn_timer = 0.0
-        self.target_spawn_delay = SPAWN_RATE_SECONDS
+        self.target_spawn_timer = 0
+        self.target_spawn_delay = SPAWN_RATE
 
-    def handle_input(self, dt):
+    def handle_input(self):
         """Handle player input"""
         keys = pg.key.get_pressed()
         if keys[pg.K_LEFT] or keys[pg.K_a]:
-            self.player.move_left(dt)
+            self.player.move_left()
         if keys[pg.K_RIGHT] or keys[pg.K_d]:
-            self.player.move_right(dt)
+            self.player.move_right()
         if keys[pg.K_SPACE]:
-            if self.player.shoot(dt):
+            if self.player.shoot():
                 bullet = Bullet(self.player.rect.centerx - 2, self.player.rect.top)
                 self.bullets.append(bullet)
 
-    def spawn_targets(self, dt):
+    def spawn_targets(self):
         """Spawn targets randomly"""
-        self.target_spawn_timer += dt
+        self.target_spawn_timer += 1
         if self.target_spawn_timer >= self.target_spawn_delay:
-            self.target_spawn_timer = 0.0
+            self.target_spawn_timer = 0
             x = random.randint(0, WIDTH - 30)
             target_type = (
                 TargetType.OPPONENT
@@ -51,19 +51,19 @@ class Game:
             target = Target(x, -30, target_type)
             self.targets.append(target)
 
-    def update_entities(self, dt):
+    def update_entities(self):
         """Update all game entities"""
-        self.player.update(dt)
+        self.player.update()
 
         # Update bullets
         for bullet in self.bullets[:]:
-            bullet.update(dt)
+            bullet.update()
             if bullet.is_off_screen():
                 self.bullets.remove(bullet)
 
         # Update targets
         for target in self.targets[:]:
-            target.update(dt)
+            target.update()
             if target.is_off_screen():
                 self.score += target.no_collision_reward
                 self.targets.remove(target)
@@ -87,9 +87,6 @@ class Game:
     def run(self) -> None:
         while self.running:
 
-            raw_dt = self.clock.tick(FPS) / 1000.0
-            dt = raw_dt * GAME_SPEED_MULTIPLIER
-
             for event in pg.event.get():
                 if event.type == pg.QUIT or (
                     event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE
@@ -97,14 +94,15 @@ class Game:
                     self.running = False
 
             # Game logic
-            self.handle_input(dt)
-            self.spawn_targets(dt)
-            self.update_entities(dt)
+            self.handle_input()
+            self.spawn_targets()
+            self.update_entities()
             self.check_collisions()
 
             # Rendering
             self.draw_everything()
             pg.display.flip()
+            self.clock.tick(FPS)
 
     def draw_everything(self) -> None:
         """Draw all game objects"""
