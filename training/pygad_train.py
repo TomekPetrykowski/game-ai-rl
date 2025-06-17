@@ -48,29 +48,28 @@ def on_generation(ga):
     print(f"Generation {ga.generations_completed} - Best Fitness: {best_fitness:.2f}")
 
 
-sequence_length = 800
-generations = 300
-success = 100_000
-num_trials = 3
+sequence_length = 1200
+generations = 1000
+success = 150_000
+num_trials = 1
 generations_needed = []
 
 
 for trial in range(num_trials):
-    env = ShootingGameEnv(seed=13)
+    env = ShootingGameEnv(seed=13, true_seed=True)
 
     ga_instance = pygad.GA(
         num_generations=generations,
-        num_parents_mating=20,
+        num_parents_mating=15,
         fitness_func=fitness_func,
-        sol_per_pop=50,
+        sol_per_pop=25,
         num_genes=sequence_length,
         gene_space=[1, 2],  # Actions: LEFT or RIGHT
-        keep_parents=5,
-        parent_selection_type="tournament",
-        crossover_type="single_point",
-        mutation_type="random",
-        mutation_percent_genes=18,
-        stop_criteria=[f"reach_{success}", "saturate_150"],
+        # keep_parents=1,
+        # parent_selection_type="tournament",
+        # crossover_type="single_point",
+        mutation_percent_genes=25,  # type: ignore
+        stop_criteria=[f"reach_{success}"],
         on_generation=on_generation,
     )
 
