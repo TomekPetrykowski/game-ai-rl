@@ -10,7 +10,7 @@ import time
 MAX_MEMORY = 100_000
 BATCH_SIZE = 1000
 LR = 0.001
-EPISODES = 500
+EPISODES = 10
 
 
 class Agent:
@@ -108,4 +108,4 @@ if __name__ == "__main__":
     plot_scores, plot_mean_scores = train()
     print("Training finished.")
     plot(plot_scores, plot_mean_scores)
-    time.sleep(10)
+    # time.sleep(10)
