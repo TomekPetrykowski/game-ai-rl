@@ -8,31 +8,29 @@ import numpy as np
 
 class ShootingGameEnv:
 
-    def __init__(self, seed=None, max_steps=-1, render_mode=False):
-        pg.init()
+    def __init__(self, seed=1, max_steps=-1, render_mode=False, true_seed=False):
+        pg.init() if render_mode else None
         self.screen = pg.display.set_mode((WIDTH, HEIGHT)) if render_mode else None
-        self.clock = pg.time.Clock()
+        self.clock = pg.time.Clock() if render_mode else None
         self.font = pg.font.SysFont("Comic Sans", 30) if render_mode else None
         self.render_mode = render_mode
         self.max_steps = max_steps
+        self.true_seed = true_seed
         self.speed = 1
         self.actions = [
+            Action.NONE.value,
             Action.LEFT.value,
             Action.RIGHT.value,
             Action.SHOOT.value,
-            Action.NONE.value,
         ]
-        # self.seed(seed)
-        self._random = random.Random(seed) if seed is not None else random.Random()
+        self._random = random.Random(seed)
         self._seed = seed
         self.reset()
 
-    # def seed(self, seed=None):
-    #     self._random = random.Random(seed)
-    #     np.random.seed(seed)
-    #     self._seed = seed
-
     def reset(self):
+        if self.true_seed:
+            self._random = random.Random(self._seed)
+
         self.player = Player(WIDTH // 2 - 25, HEIGHT - 50)
         self.bullets = []
         self.targets = []
@@ -41,9 +39,11 @@ class ShootingGameEnv:
         self.target_spawn_delay = SPAWN_RATE
         self.done = False
         self.ticks = 0
-        # return self.get_state()
+        self.last_action = None
 
     def step(self, action):
+        self.last_action = action
+
         self._handle_action(action)
         self._spawn_targets()
         self._update_entities()
@@ -69,37 +69,33 @@ class ShootingGameEnv:
         return self.get_state(), self.score, self.done
 
     def get_state(self):
-        grid_size = 20
-        grid = np.zeros((grid_size, grid_size, 3), dtype=np.float32)
-        cell_w, cell_h = WIDTH / grid_size, HEIGHT / grid_size
+        # 1. Player x position (normalized)
+        player_x = self.player.rect.centerx / WIDTH
 
-        # Player
-        player_cells = self._get_covered_cells(
-            self.player.rect, cell_w, cell_h, grid_size
-        )
-        for gx, gy in player_cells:
-            grid[gy, gx, 0] = 1.0
+        # 2. Player movement direction
+        if hasattr(self, "last_action"):
+            if self.last_action == Action.LEFT.value:
+                move_dir = -1
+            elif self.last_action == Action.RIGHT.value:
+                move_dir = 1
+            else:
+                move_dir = 0
+        else:
+            move_dir = 0
 
-        # Bullets
-        for bullet in self.bullets:
-            bullet_cells = self._get_covered_cells(
-                bullet.rect, cell_w, cell_h, grid_size
+        allies = [t for t in self.targets if t.target_type == TargetType.ALLY]
+        if allies:
+            # Find the nearest ally (smallest vertical distance from player)
+            nearest = min(
+                allies, key=lambda t: abs(t.rect.centery - self.player.rect.centery)
             )
-            for gx, gy in bullet_cells:
-                grid[gy, gx, 1] += 1.0
+            ally_dist = (nearest.rect.centery - self.player.rect.centery) / HEIGHT
+            ally_x_rel = (nearest.rect.centerx - self.player.rect.centerx) / WIDTH
+        else:
+            ally_dist = -1
+            ally_x_rel = 0
 
-        # Targets
-        for target in self.targets:
-            target_cells = self._get_covered_cells(
-                target.rect, cell_w, cell_h, grid_size
-            )
-            for gx, gy in target_cells:
-                if target.target_type == TargetType.OPPONENT:
-                    grid[gy, gx, 2] += 1.0
-                else:
-                    grid[gy, gx, 2] -= 1.0
-
-        return grid
+        return np.array([player_x, move_dir, ally_dist, ally_x_rel], dtype=np.float32)
 
     def _get_covered_cells(self, rect, cell_w, cell_h, grid_size):
         left = int(rect.left // cell_w)
@@ -114,6 +110,9 @@ class ShootingGameEnv:
 
     def render(self):
         if not self.screen:
+            return
+
+        if not self.clock:
             return
 
         for event in pg.event.get():
@@ -162,7 +161,12 @@ class ShootingGameEnv:
                 if self._random.random() > SPAWN_CHANCE_ALLY
                 else TargetType.ALLY
             )
-            target = Target(x, -30, target_type, rng=self._random)
+            target = Target(
+                x,
+                -30,
+                self._random,
+                target_type,
+            )
             self.targets.append(target)
 
     def _update_entities(self):

@@ -15,9 +15,8 @@ def evaluate_solution(solution):
     return total_reward
 
 
-for i in range(5):
-    solution = np.load(
-        os.path.join("training", "pygad_sols", f"sol_{i}.npy")
-    )  # Example solution with 100 actions
+for i in range(3):
+    solution = np.load(os.path.join("training", "pygad_sols", f"sol_{i}.npy"))
+    # solution = np.load(os.path.join("training", "pygad_sols", f"sol_{i}_old.npy"))
     reward = evaluate_solution(solution)
     print(f"Reward: {reward}")

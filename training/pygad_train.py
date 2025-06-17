@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from os import path
 
 
-def fitness_func(instance, solution, solution_idx):
+def fitness_func_old(instance, solution, solution_idx):
     env.reset()
     total_reward = 0
     for i in range(len(solution)):
@@ -19,47 +19,23 @@ def fitness_func(instance, solution, solution_idx):
     return total_reward
 
 
-def fitness_func_old(instance, solution, solution_idx):
+def fitness_func(instance, solution, solution_idx):
     env.reset()
     total_reward = 0
-
-    grid_size = 20
-
-    def get_neighbors(x, y, size):
-        neighbors = []
-        for dx in [-1, 0, 1]:
-            for dy in [-1, 0, 1]:
-                nx, ny = x + dx, y + dy
-                if 0 <= nx < size and 0 <= ny < size:
-                    neighbors.append((nx, ny))
-        return neighbors
-
+    prev_state = env.get_state()
     for i in range(len(solution)):
-        action = solution[i]
-        state, reward, done = env.step(int(action))
-        mid_reward = 0
+        action = int(solution[i])
+        state, reward, done = env.step(action)
+        total_reward += reward
 
-        player_cells = np.argwhere(state[..., 0] > 0.5)
-        bullet_cells = np.argwhere(state[..., 1] > 0.5)
+        # state = [player_x, move_dir, ally_dist, ally_x_rel]
+        prev_ally_x_rel = prev_state[3] if len(prev_state) > 3 else 0
+        curr_ally_x_rel = state[3] if len(state) > 3 else 0
 
-        for px, py in player_cells:  # type: ignore
-            for nx, ny in get_neighbors(px, py, grid_size):
-                target_val = state[nx, ny, 2]
-                if target_val > 0.5:
-                    mid_reward -= 2
-                elif target_val < -0.5:
-                    mid_reward += 2
+        if abs(curr_ally_x_rel) < abs(prev_ally_x_rel):
+            total_reward += 2
 
-        for bx, by in bullet_cells:  # type: ignore
-            for nx, ny in get_neighbors(bx, by, grid_size):
-                target_val = state[nx, ny, 2]
-                if target_val > 0.5:
-                    mid_reward += 1
-                elif target_val < -0.5:
-                    mid_reward -= 1
-
-        mid_reward += reward
-        total_reward += mid_reward
+        prev_state = state
 
         if done:
             break
@@ -72,11 +48,10 @@ def on_generation(ga):
     print(f"Generation {ga.generations_completed} - Best Fitness: {best_fitness:.2f}")
 
 
-action_space_size = 4
-sequence_length = 1000
-generations = 150
-success = 110_000
-num_trials = 5
+sequence_length = 800
+generations = 300
+success = 100_000
+num_trials = 3
 generations_needed = []
 
 
@@ -85,16 +60,17 @@ for trial in range(num_trials):
 
     ga_instance = pygad.GA(
         num_generations=generations,
-        num_parents_mating=10,
+        num_parents_mating=20,
         fitness_func=fitness_func,
-        sol_per_pop=30,
+        sol_per_pop=50,
         num_genes=sequence_length,
-        gene_space=list(range(action_space_size)),
-        keep_parents=4,
+        gene_space=[1, 2],  # Actions: LEFT or RIGHT
+        keep_parents=5,
         parent_selection_type="tournament",
         crossover_type="single_point",
         mutation_type="random",
-        stop_criteria=[f"reach_{success}", "saturate_100"],
+        mutation_percent_genes=18,
+        stop_criteria=[f"reach_{success}", "saturate_150"],
         on_generation=on_generation,
     )
 
