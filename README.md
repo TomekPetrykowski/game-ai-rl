@@ -84,9 +84,9 @@ The GA uses a multi-component fitness function:
 
 #### Training Hyperparameters
 ```python
-MAX_MEMORY = 100,000        # Replay buffer size
-BATCH_SIZE = 1,000          # Training batch size
-LEARNING_RATE = 0.001       # Adam optimizer learning rate
+MAX_MEMORY = 100_000        # Replay buffer size
+BATCH_SIZE = 1_000          # Training batch size
+LEARNING_RATE = 0.005       # Adam optimizer learning rate
 EPISODES = 500              # Training episodes
 GAMMA = 0.95                # Discount factor
 
