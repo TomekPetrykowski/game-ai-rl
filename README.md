@@ -51,6 +51,7 @@ I have used this algorithm to find a solution for deterministic kind of game (ga
 - **Algorithm:** Genetic Algorithm with tournament selection
 - **Solution Length:** 1000 actions per sequence
 - **Population Size:** 200 individuals
+- **Parents Mating:** 100
 - **Generations:** 70 maximum per trial
 - **Parent Selection:** Tournament selection (K=50)
 - **Mutation Rate:** 20% of genes
@@ -84,15 +85,15 @@ The GA uses a multi-component fitness function:
 
 #### Training Hyperparameters
 ```python
-MAX_MEMORY = 100_000        # Replay buffer size
-BATCH_SIZE = 1_000          # Training batch size
-LEARNING_RATE = 0.005       # Adam optimizer learning rate
-EPISODES = 500              # Training episodes
-GAMMA = 0.95                # Discount factor
+MAX_MEMORY = 100_000       
+BATCH_SIZE = 1_000         
+LEARNING_RATE = 0.005       
+EPISODES = 500              
+GAMMA = 0.95                
 
-EPSILON_START = 0.8         # Initial exploration rate
-EPSILON_MIN = 0.01          # Minimum exploration rate
-EPSILON_DECAY = 0.995       # Decay rate per episode
+EPSILON_START = 0.8         
+EPSILON_MIN = 0.01          
+EPSILON_DECAY = 0.995       
 ```
 
 #### Agent Configuration
