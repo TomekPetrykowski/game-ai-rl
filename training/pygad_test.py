@@ -5,9 +5,9 @@ import os
 
 def evaluate_solution(solution):
     total_reward = 0
-    env = ShootingGameEnv(seed=13, true_seed=True, render_mode=True)
+    env = ShootingGameEnv(seed=7, true_seed=True, render_mode=True)
     for action in solution:
-        _, reward, done = env.step(action)
+        _, reward, score, done = env.step(action)
         total_reward += reward
         if done:
             break
@@ -15,8 +15,7 @@ def evaluate_solution(solution):
     return total_reward
 
 
-for i in range(3):
+for i in range(5):
     solution = np.load(os.path.join("training", "pygad_sols", f"sol_{i}.npy"))
-    # solution = np.load(os.path.join("training", "pygad_sols", f"sol_{i}_old.npy"))
     reward = evaluate_solution(solution)
     print(f"Reward: {reward}")

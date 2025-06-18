@@ -37,10 +37,10 @@ class QTrainer:
         self.criterion = nn.MSELoss()
 
     def train_step(self, state, action, reward, next_state, done):
-        state = torch.tensor(state, dtype=torch.float).to(DEVICE)
-        next_state = torch.tensor(next_state, dtype=torch.float).to(DEVICE)
-        action = torch.tensor(action, dtype=torch.long).to(DEVICE)
-        reward = torch.tensor(reward, dtype=torch.float).to(DEVICE)
+        state = torch.from_numpy(state).to(DEVICE)
+        next_state = torch.from_numpy(next_state).to(DEVICE)
+        action = torch.from_numpy(action).to(DEVICE)
+        reward = torch.from_numpy(reward).to(DEVICE)
 
         if len(state.shape) == 1:
             state = torch.unsqueeze(state, 0)
@@ -49,21 +49,19 @@ class QTrainer:
             reward = torch.unsqueeze(reward, 0)
             done = (done,)
 
-        # 1: predicted Q values with current state
+        # Q-learning update
         pred = self.model(state)
-
         target = pred.clone()
+
         for idx in range(len(done)):
             Q_new = reward[idx]
             if not done[idx]:
                 Q_new = reward[idx] + self.gamma * torch.max(
                     self.model(next_state[idx])
                 )
-
-            target[idx][torch.argmax(action[idx]).item()] = Q_new
+            target[idx][action[idx]] = Q_new
 
         self.optimizer.zero_grad()
         loss = self.criterion(target, pred)
         loss.backward()
-
         self.optimizer.step()

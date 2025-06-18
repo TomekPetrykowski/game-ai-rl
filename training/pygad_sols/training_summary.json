@@ -1,0 +1,8 @@
+{
+  "total_trials": 5,
+  "successful_trials": 5,
+  "success_rate": 1.0,
+  "avg_generations_successful": 24.2,
+  "best_trial": 0,
+  "best_fitness": 828.5000000000005
+}

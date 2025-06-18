@@ -12,7 +12,7 @@ class ShootingGameEnv:
         pg.init() if render_mode else None
         self.screen = pg.display.set_mode((WIDTH, HEIGHT)) if render_mode else None
         self.clock = pg.time.Clock() if render_mode else None
-        self.font = pg.font.SysFont("Comic Sans", 30) if render_mode else None
+        self.font = pg.font.SysFont("Ubuntu", 30) if render_mode else None
         self.render_mode = render_mode
         self.max_steps = max_steps
         self.true_seed = true_seed
@@ -43,36 +43,58 @@ class ShootingGameEnv:
 
     def step(self, action):
         self.last_action = action
+        prev_player_x = self.player.rect.centerx
 
         self._handle_action(action)
         self._spawn_targets()
         self._update_entities()
         self._check_collisions()
 
-        self.ticks += 1
+        reward = self._calculate_positioning_reward(prev_player_x)
 
         if self.max_steps > 0 and self.ticks > self.max_steps:
             self.done = True
 
-        if self.score < -500:
+        if self.score < -500 or self.score >= 300:
             self.done = True
-            self.score = -500
-
-        if self.score >= 200:
-            self.done = True
-            self.score = 200
 
         if self.render_mode:
             self.render()
 
-        # state, reward, done
-        return self.get_state(), self.score, self.done
+        self.ticks += 1
+        # state, reward, score, done
+        return self.get_state(), reward, self.score, self.done
+
+    def _calculate_positioning_reward(self, prev_player_x):
+        allies = [t for t in self.targets if t.target_type == TargetType.ALLY]
+        if not allies:
+            return 0.0
+
+        # closest ally (by vertical distance)
+        closest_ally = min(
+            allies, key=lambda t: abs(t.rect.centery - self.player.rect.centery)
+        )
+
+        # current and previous alignment
+        current_x_diff = abs(self.player.rect.centerx - closest_ally.rect.centerx)
+        prev_x_diff = abs(prev_player_x - closest_ally.rect.centerx)
+
+        # reward for moving towards allies
+        if current_x_diff < prev_x_diff:
+            return 0.2
+        elif current_x_diff > prev_x_diff:
+            return -0.1
+
+        # Bonus for being close to the ally
+        if current_x_diff < 30:
+            return 0.5
+
+        return 0.0
 
     def get_state(self):
-        # 1. Player x position (normalized)
+        MAX_ALLIES = 3
         player_x = self.player.rect.centerx / WIDTH
 
-        # 2. Player movement direction
         if hasattr(self, "last_action"):
             if self.last_action == Action.LEFT.value:
                 move_dir = -1
@@ -84,29 +106,27 @@ class ShootingGameEnv:
             move_dir = 0
 
         allies = [t for t in self.targets if t.target_type == TargetType.ALLY]
+        allies.sort(key=lambda t: abs(t.rect.centery - self.player.rect.centery))
+
+        ally_features = []
+        for i in range(MAX_ALLIES):
+            if i < len(allies):
+                ally = allies[i]
+                rel_x = (ally.rect.centerx - self.player.rect.centerx) / WIDTH
+                rel_y = (ally.rect.centery - self.player.rect.centery) / HEIGHT
+                ally_features.extend([rel_x, rel_y])
+            else:
+                ally_features.extend([0.0, -2.0])  # default
+
+        closest_ally_alignment = 0.0
         if allies:
-            # Find the nearest ally (smallest vertical distance from player)
-            nearest = min(
-                allies, key=lambda t: abs(t.rect.centery - self.player.rect.centery)
-            )
-            ally_dist = (nearest.rect.centery - self.player.rect.centery) / HEIGHT
-            ally_x_rel = (nearest.rect.centerx - self.player.rect.centerx) / WIDTH
-        else:
-            ally_dist = -1
-            ally_x_rel = 0
+            closest_ally = allies[0]
+            x_diff = abs(closest_ally.rect.centerx - self.player.rect.centerx) / WIDTH
+            closest_ally_alignment = max(0.0, 1.0 - x_diff * 2)
 
-        return np.array([player_x, move_dir, ally_dist, ally_x_rel], dtype=np.float32)
+        state = [player_x, move_dir, closest_ally_alignment] + ally_features
 
-    def _get_covered_cells(self, rect, cell_w, cell_h, grid_size):
-        left = int(rect.left // cell_w)
-        right = int((rect.right - 1) // cell_w)
-        top = int(rect.top // cell_h)
-        bottom = int((rect.bottom - 1) // cell_h)
-        cells = []
-        for gx in range(max(0, left), min(grid_size, right + 1)):
-            for gy in range(max(0, top), min(grid_size, bottom + 1)):
-                cells.append((gx, gy))
-        return cells
+        return np.array(state, dtype=np.float32)
 
     def render(self):
         if not self.screen:

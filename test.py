@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
         while not done:
             action = random.choice([1, 2])
-            state, reward, done = env.step(action)
+            state, reward, score, done = env.step(action)
             total_reward += reward
             steps += 1
 
