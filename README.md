@@ -1,4 +1,4 @@
-# Shooting Game trained with Reinforcement Learning
+# Catching Game trained with Reinforcement Learning
 
 This project is a simple catching game implemented in Python with Pygame, enhanced with AI agents trained via a Genetic Algorithm (GA) and a Q-network (reinforcement learning). The goal is to control a player to catch his allies, and maximize the score while avoiding penalties. The project supports both manual and AI play.
 
@@ -99,7 +99,7 @@ EPSILON_DECAY = 0.995
 #### Agent Configuration
 - Memory: Deque with 100k capacity
 - Model: Linear_QNet(9, 512, 2)
-- Optimizer: Adam (lr=0.001)
+- Optimizer: Adam (lr=0.005)
 - Loss Function: MSE Loss
 - Training: Short-term + Long-term memory replay
 
