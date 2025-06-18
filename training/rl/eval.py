@@ -9,7 +9,7 @@ model = Linear_QNet(9, 512, 2).to(DEVICE)
 model.load_state_dict(torch.load(filename, map_location=DEVICE))
 model.eval()
 
-env = ShootingGameEnv(render_mode=True)
+env = ShootingGameEnv(render_mode=True, endless=True)
 
 state = env.get_state()
 done = False

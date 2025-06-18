@@ -8,7 +8,9 @@ import numpy as np
 
 class ShootingGameEnv:
 
-    def __init__(self, seed=1, max_steps=-1, render_mode=False, true_seed=False):
+    def __init__(
+        self, seed=1, max_steps=-1, render_mode=False, true_seed=False, endless=False
+    ):
         pg.init() if render_mode else None
         self.screen = pg.display.set_mode((WIDTH, HEIGHT)) if render_mode else None
         self.clock = pg.time.Clock() if render_mode else None
@@ -16,6 +18,7 @@ class ShootingGameEnv:
         self.render_mode = render_mode
         self.max_steps = max_steps
         self.true_seed = true_seed
+        self.endless = endless
         self.speed = 1
         self.actions = [
             Action.NONE.value,
@@ -55,8 +58,9 @@ class ShootingGameEnv:
         if self.max_steps > 0 and self.ticks > self.max_steps:
             self.done = True
 
-        if self.score < -500 or self.score >= 300:
-            self.done = True
+        if not self.endless:
+            if self.score < -500 or self.score >= 300:
+                self.done = True
 
         if self.render_mode:
             self.render()
